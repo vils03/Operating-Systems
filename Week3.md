@@ -159,10 +159,15 @@ $ cat /etc/passwd | grep -v bash | wc -l
 
 #### 18.Намерете само Group ID-то си от файлa /etc/passwd.
 ```shell
+$ cat /etc/passwd | grep 's0600007' | cut -d ':' -f4
+
 ```
+
 #### 19. Колко коментара има във файла /etc/services ? Коментарите се маркират със символа #, след който всеки символ на реда се счита за коментар.
 
 ```shell
+$ cat /etc/services | grep '#'|wc -l
+
 ```
 
 #### 20. Колко файлове в /bin са 'shell script'-oве? (Колко файлове в дадена директория са ASCII text?)
