@@ -122,15 +122,21 @@ $ cat /etc/passwd | grep -v bash | wc -l
 #### 14. Изведете само имената на хората с второ име по-дълго от 6 (>6) символа според /etc/passwd
 
 ```shell
+$ cat /etc/passwd | cut -d : -f5 | cut -d , -f1 | awk 'length($2) > 6 {print $2}'
+
 ```
 
 #### 15. Изведете имената на хората с второ име по-късо от 8 (<=7) символа според /etc/passwd // !(>7) = ?
 
 ```shell
+$ cat /etc/passwd | cut -d : -f5 | cut -d , -f1 | awk 'length($2) < 8 {print $2}'
+
 ```
 
 #### 16. Изведете целите редове от /etc/passwd за хората от 15.
 ```shell
+$ cat /etc/passwd | egrep '\s[^, ]{1,7},'
+
 ```
 
 #### 17. Копирайте <РЕПО>/exercises/data/emp.data във вашата home директория.
@@ -154,7 +160,28 @@ $ cat /etc/passwd | grep -v bash | wc -l
 - всеки ред без второто поле
 - за всеки ред, сумата от второ и трето поле
 - сумата на второ и трето поле от всеки ред
+
 ```shell
+$ cp /srv/fmi-os/exercises/data/emp.data .
+$ cat emp.data | awk '{count+=1} END {print count}'
+$ cat emp.data | awk '{if(NR == 3) print $0}'
+$ cat emp.data | awk '{print $NF}'
+$ cat emp.data | awk 'END {print $NF}'
+$ cat emp.data | awk '{if(NF > 4) print $0}'
+$ cat emp.data | awk '{if($NF > 4) print $0}'
+$ cat emp.data | awk '{fields += NF} END {print fields}'
+$ cat emp.data | awk '/Beth/ {row+=1} END {print row}'
+$ cat emp.data | awk 'BEGIN {max =0;line=""} {if($3 > max){ max = $3; line = $0}} END {print max " " line}'
+$ cat emp.data | awk '{if(NF>0) print $0}' 
+$ cat emp.data | awk '{if(length($0)>17) print $0}'
+$ cat emp.data | awk '{print NF " " $0}'
+$ cat emp.data | awk '{print $2 " " $1}'
+$ cat emp.data | awk '{temp = $1; $1 = $2; $2 = temp; print $0}'
+$ cat emp.data | awk '{$1 = NR;print $0}'  
+$ cat emp.data | awk '{$2 = "\t";print $0}'
+$ cat emp.data | awk '{sum = $2 + $3;print sum}'
+$ cat emp.data | awk 'BEGIN {sum = 0}{sum += $2;sum+=$3} END {print sum}'
+
 ```
 
 #### 18.Намерете само Group ID-то си от файлa /etc/passwd.
