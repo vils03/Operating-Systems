@@ -172,11 +172,47 @@ $ ./validint.sh 32 42 0; echo $?
 
 $ ./validint.sh asdf - 280; echo $?
 3
+
 ```shell
+  #!/bin/bash
+ 
+  if [ $# -ne 3 ]; then
+      echo "Invalid input"
+      exit 1
+  fi
+  regex="^[+-]?[0-9]+$"
+  for ARG in $@; do
+      if [[ $ARG =~ $regex ]]; then
+          continue
+      else
+          echo "Not valid numbers"
+          exit 3
+      fi
+  done
+  if [ $2 -gt $3 ]; then
+      echo "Reversed interval"
+      exit 2
+  fi
+  if [ $1 -gt $2 ] && [ $1 -lt $3 ]; then
+      echo "In interval"
+      exit 0
+  else
+      echo "Not in interval"
+      exit 1
+  fi
 
 ```
 
+#11. Да се напише shell скрипт, който форматира големи числа, за да са по-лесни за четене.
+Като пръв аргумент на скрипта се подава цяло число.
+Като втори незадължителен аргумент се подава разделител. По подразбиране цифрите се разделят с празен интервал.
 
+Примери:
+$ ./nicenumber.sh 1889734853
+1 889 734 853
+
+$ ./nicenumber.sh 7632223 ,
+7,632,223
 ```shell
 
 ```
