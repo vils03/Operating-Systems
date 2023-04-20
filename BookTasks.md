@@ -235,7 +235,7 @@ $ find ~ -mindepth 1 -maxdepth 1 -type f -uid $(id -u) -exec chmod 664 {} \; 2>/
  13 find $1 -mindepth 1 -type l -exec [ ! -e {} ] \; -printf "%p\n"
 
 ```
-
+20
 ```shell
 1 #!/bin/bash
   2
