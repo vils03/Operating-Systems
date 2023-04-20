@@ -52,7 +52,7 @@ s45216:x:1235:502:Aleksandar Yavashev, Inf, k3, g3:/home/Inf/s45216:/bin/bash
 2 51
 
 ```shell
- cat /etc/passwd | awk -F':' '$4=502' | cut -d',' -f1 | egrep "[[:alpha:]]*a$"|cut     -c 2,3 | sort|uniq -c|sort -nr -k1|head -n 1
+ cat /etc/passwd | awk -F':' '$4=502' | cut -d',' -f1 | egrep "[[:alpha:]]*a$"|cut -c 2,3 | sort|uniq -c|sort -nr -k1|head -n 1
 
 ```
 
@@ -62,6 +62,54 @@ s45216:x:1235:502:Aleksandar Yavashev, Inf, k3, g3:/home/Inf/s45216:/bin/bash
 find . -mindepth 1 -type f -printf "%p %n\n"|sort -nr -k2|head -n5|cut -d ' ' -f1
 ```
 
+#### 2018-SE-01.
+Променете правата на всички директории, намиращи се някъде във вашата home
+директория, така че да станат такива, каквито биха се получили, ако ги бяхте създали с маска
+0022.
+```shell
+find . -mindepth 1 -maxdepth 1 -type d -exec chmod 644 {} \;
+```
+
+#### 2018-SE-02.
+Напишете серия от команди, извеждащи на екрана само inode-а на най-скоро променения (по съдържание) файл, намиращ се в home директорията на потребител pesho (или нейните под-директории), който има повече от едно име
+```shell
+find . -mindepth 1 -type l -printf "%AT %i\n" 2>/dev/null | sort -n -k1|head -n1|cut -d ' ' -f2
+```
+#### 2018-SE-03.
+При подреждане в нарастващ ред на числовите потребителски идентификатори (UID)
+на акаунтите, дефинирани в системата, 201-ят акаунт е от групата, запазена за акаунти от специалност СИ.
+Изведете списък с имената (име и фамилия) и home директориите на всички акаунти от специалност
+СИ, подреден по факултетен номер.
+За справка:
+s61988:x:1219:504:Stoian Genchev,SI,2,5:/home/SI/s61988:/bin/bash
+s81430:x:1234:503:Iordan Petkov, KN, k2, g7:/home/KN/s81430:/bin/bash
+s61807:x:1248:504:Elica Venchova:/home/SI/s61807:/bin/bash
+s62009:x:1254:504:Denitsa Dobreva, 2, 6:/home/SI/s62009:/bin/bash
+s61756:x:1258:504:Katrin Kartuleva, SI, 4, 1:/home/SI/s61756:/bin/bash
+s855287:x:1195:504:Vaska Kichukova,SI,2,5:/home/SI/s855287:/bin/bash
+Примерен изход:
+Katrin Kartuleva:/home/SI/s61756
+Elica Venchova:/home/SI/s61807
+Stoian Genchev:/home/SI/s61988
+Denitsa Dobreva:/home/SI/s62009
+Vaska Kichukova:/home/SI/s855287
+
+```shell
+$ gr=$(cat /etc/passwd |sort -n -t':' -k3| head -n 201|tail -n 1|cut -d ':' -f4)
+$ cat /etc/passwd | awk -F':' -v ch=$gr '$4==ch {print $0}'
+```
+
+```shell
+
+```
+
+```shell
+
+```
+
+```shell
+
+```
 
 ```shell
 
