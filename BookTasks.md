@@ -218,7 +218,36 @@ $ cat spacex.txt | grep $cosm|sort -nr -t'|' -k1 |head -n1|cut -d'|' -f3,4|sed '
 ```shell
 $ find ~ -mindepth 1 -maxdepth 1 -type f -uid $(id -u) -exec chmod 664 {} \; 2>/dev/null
 ```
+15
+```shell
+ #!/bin/bash
+  2
+  3 if [ $# -ne 1 ]; then
+  4     echo "Invalid input"
+  5     exit 1
+  6 fi
+  7
+  8 if [ ! -d $1 ]; then
+  9     echo "Invalid argument"
+ 10     exit 1
+ 11 fi
+ 12
+ 13 find $1 -mindepth 1 -type l -exec [ ! -e {} ] \; -printf "%p\n"
+
+```
 
 ```shell
-
+1 #!/bin/bash
+  2
+  3 if [ $# -ne 1 ]; then
+  4     echo "Invalid input"
+  5     exit 1
+  6 fi
+  7
+  8 if [ ! -f $1 ]; then
+  9     echo "Invalid argument"
+ 10     exit 1
+ 11 fi
+ 12
+ 13 cat $1 | cut -d'-' -f2-|sed 's/^ //'|awk '{print NR". "$0}'|sed 's/„/@/'|    sed 's/“/@/' | sort -t'@' -k2|sed 's/@/„/1'|sed 's/@/“/1'
 ```
