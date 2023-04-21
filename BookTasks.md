@@ -302,3 +302,51 @@ for file in $(find . -type f); do
         fi
 done
 ```
+#### 19.
+```shell
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+
+lines1=$(cat $1 | grep "$1" | wc -l)
+lines2=$(cat $2 | grep "$2" | wc -l)
+
+if [ $lines1 -gt $lines2 ]; then
+        cat $1 | cut -d'-' -f2-|sed 's/^ //'|sort >> "$1.songs"
+else
+        cat $2 | cut -d'-' -f2-|sed 's/^ //'|sort >> "$2.songs"
+fi
+```
+\
+#!/bin/bash
+
+if [ $# -ne 3 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+
+if [ ! -f $1 ]; then
+        echo "First argument is not file"
+        exit 1
+fi
+line=""
+flag=""
+for char in $(cat $1 | egrep "^$3=" | cut -d'=' -f2|cut -d' ' -f1-)
+do
+        for ch in $(cat $1 | egrep "^$2=" | cut -d'=' -f2|cut -d' ' -f1-);do
+                if [ $char == $ch ]; then
+                        flag=1
+                        break
+                fi
+        done
+        if [[ $flag -ne 1 ]]; then
+                line+="${char} "
+        else
+                flag=""
+        fi
+done
+toRep=$(cat $1 |egrep "^$3=.*")
+sed -i "s/$toRep/$3=$line/g" $1
