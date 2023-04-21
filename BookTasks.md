@@ -364,3 +364,19 @@ fi
 cat /etc/passwd | cut -d':' -f6| grep "home"|xargs -I {} find {} -type f -printf "%AT %f %u\n" 2>/dev/null|sort -nr -k1|head -n1|cut -d' ' -f2,3
 
 ```
+#### 24.
+```shell
+#!/bin/bash
+
+if [ $# -gt 2 ]; then
+        echo "More than two arguments"
+        exit 1
+fi
+DIR=$1
+if [ $# -eq 2 ]; then
+        find $DIR -type f -printf "%n %f\n" 2>/dev/null |awk -v num=$2 '$1>=num {print $2}'
+fi
+if [ $# -eq 1 ]; then
+        find $DIR -mindepth 1 -type l 2>/dev/null -exec [ ! -e {} ] \; -printf "%f\n"
+fi
+```
