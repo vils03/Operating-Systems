@@ -320,7 +320,8 @@ else
         cat $2 | cut -d'-' -f2-|sed 's/^ //'|sort >> "$2.songs"
 fi
 ```
-\
+#### 21. 
+```shell
 #!/bin/bash
 
 if [ $# -ne 3 ]; then
@@ -350,3 +351,16 @@ do
 done
 toRep=$(cat $1 |egrep "^$3=.*")
 sed -i "s/$toRep/$3=$line/g" $1
+```
+#### 23.
+```shell
+#!/bin/bash
+
+if [ $# -ne 0 ]; then
+        echo "Wrong input"
+        exit 1
+fi
+
+cat /etc/passwd | cut -d':' -f6| grep "home"|xargs -I {} find {} -type f -printf "%AT %f %u\n" 2>/dev/null|sort -nr -k1|head -n1|cut -d' ' -f2,3
+
+```
