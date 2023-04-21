@@ -276,3 +276,29 @@ destination.
  
   cat $1 | cut -d'-' -f2-|sed 's/^ //'|awk '{print NR". "$0}'|sed 's/„/@/'|    sed 's/“/@/' | sort -t'@' -k2|sed 's/@/„/1'|sed 's/@/“/1'
 ```
+
+#### 18.
+```shell
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+regex="^[0-9]+$"
+if [[ ! $1=~$regex || ! $2=~$regex ]]; then
+        echo "Invalid input"
+        exit 1
+fi
+mkdir a b c
+for file in $(find . -type f); do
+        lines=$(cat $file | wc -l)
+        if [ $lines -lt $1 ];then
+                mv $file a
+        elif [[ $lines -gt $1 && $lines -lt $2 ]];then
+                mv $file b
+        else
+                mv $file c
+        fi
+done
+```
