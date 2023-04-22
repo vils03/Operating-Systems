@@ -499,3 +499,41 @@ fi
 
 find $1 -mindepth 1 -type f -name "*$3*" -printf "%p\n"|cut -d'/' -f2 | xargs -I {} mv $1/{} $2
 ```
+
+#### 2017-SE-03.
+Напишете скрипт, който ако се изпълнява от root потребителя:
+а) извежда обобщена информация за броя и общото количество активна памет (RSS - resident set
+size, non-swaped physical memory that a task has used) на текущите процеси на всеки потребител;
+б) ако процесът с най-голяма активна памет на даден потребител използва два пъти повече памет
+от средното за потребителя, то скриптът да прекратява изпълнението му по подходящ начин.
+За справка:
+$ ps aux | head -5
+USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND
+root 1 0.0 0.0 15820 1052 ? Ss Apr21 0:06 init [2]
+root 2 0.0 0.0 0 0 ? S Apr21 0:00 [kthreadd]
+root 3 0.0 0.0 0 0 ? S Apr21 0:02 [ksoftirqd/0]
+root 5 0.0 0.0 0 0 ? S< Apr21 0:00 [kworker/0:0H]
+Алтернативно, може да ползвате изхода от ps -e -o uid,pid,rss
+```shell
+#!/bin/bash
+
+if [[ "$(whoami)" != "s0600007" ]]; then
+        echo "This script must be rum by root"
+        exit 1
+fi
+
+for user in $(ps -e -o uid=|sort -d|uniq); do
+        ps -e -u $user -o rss=,user=|awk -v sum=0 '{sum+=$1} END {print sum" "$2}'
+done
+
+for user in $(ps -e -o uid=|sort -d|uniq); do
+        all=$(ps -e -u $user -o rss=|awk -v sum=0 '{sum+=$1} END {print sum}')
+        count=$(ps -e -u $user -o rss=|wc -l)
+        av=$(( all / count ))
+        maxAndPid=$(ps -e -u $user -o rss=,pid=|awk -v max=0 'max<$1 {max=$1} END {print max" "$2}')
+        if [[ $(( av * 2 )) -lt $(echo $maxAndPid|cut -d' ' -f1) ]]; then
+                kill -9 $(echo $maxAndPid|cut -d' ' -f2)
+        fi
+done
+
+```
