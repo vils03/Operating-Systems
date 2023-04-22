@@ -537,3 +537,41 @@ for user in $(ps -e -o uid=|sort -d|uniq); do
 done
 
 ```
+
+#### 2017-SE-04.
+Напишете shell script, който получава задължителен първи позиционен параметър
+– директория и незадължителен втори – име на файл. Скриптът трябва да намира в подадената
+директория и нейните под-директории всички symlink-ове и да извежда (при подаден аргумент
+файл – добавяйки към файла, а ако не е – на стандартния изход) за тях следната информация:
+• ако destination-a съществува – името на symlink-а -> името на destination-а;
+• броя на symlink-овете, чийто destination не съществува.
+Примерен изход:
+lbaz -> /foo/bar/baz
+lqux -> ../../../qux
+lquux -> /foo/quux
+Broken symlinks: 34
+```shell
+#!/bin/bash
+
+if [ $# -gt 2 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+count=0
+for syml in $(find $1 -type l 2>/dev/null); do
+        if [ ! -e $syml ]; then
+                count=$(( count + 1 ))
+        else
+                if [ $# -eq 1 ]; then
+                        stat -c "%N\n" $syml
+                else
+                        stat -c "%N\n" $syml >> $2
+                fi
+        fi
+done
+if [ $# -eq 1 ]; then
+        echo "Broken symlinks $count"
+else
+        echo "Broken symlinks $count" >> $2
+fi
+```
