@@ -237,6 +237,80 @@ destination.
  
   find $1 -mindepth 1 -type l -exec [ ! -e {} ] \; -printf "%p\n"
 ```
+
+
+#### 2016-SE-03.
+В текущата директория има само обикновени файлове (без директории). Да се
+напише bash script, който приема 2 позиционни параметъра – числа, който мести файловете от
+текущата директория към нови директории (a, b и c, които трябва да бъдат създадени), като
+определен файл се мести към директория ’a’, само ако той има по-малко редове от първи позиционен
+параметър, мести към директория ’b’, ако редове са между първи и втори позиционен параметър
+и в ’c’ в останалите случаи.
+```shell
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+regex="^[0-9]+$"
+if [[ ! $1=~$regex || ! $2=~$regex ]]; then
+        echo "Invalid input"
+        exit 1
+fi
+mkdir a b c
+for file in $(find . -type f); do
+        lines=$(cat $file | wc -l)
+        if [ $lines -lt $1 ];then
+                mv $file a
+        elif [[ $lines -gt $1 && $lines -lt $2 ]];then
+                mv $file b
+        else
+                mv $file c
+        fi
+done
+```
+#### 2016-SE-04.
+Файловете във вашата home директория съдържат информация за музикални албуми и имат специфична структура. Началото на всеки ред е годината на издаване на албума, а
+непосредствено, след началото на всеки ред следва името на изпълителя на песента. Имената на
+файловете се състоят от една дума, която съвпада с името на изпълнителя.
+Примерно съдържание на файл с име "Bonnie":
+52005г. Bonnie - "God Was in the Water" (Randall Bramblett, Davis Causey) – 5:17
+2005г. Bonnie - "Love on One Condition" (Jon Cleary) – 3:43
+2005г. Bonnie - "So Close" (Tony Arata, George Marinelli, Pete Wasner) – 3:22
+2005г. Bonnie - "Trinkets" (Emory Joseph) – 5:02
+2005г. Bonnie - "Crooked Crown" (David Batteau, Maia Sharp) – 3:49
+2005г. Bonnie - "Unnecessarily Mercenary" (Jon Cleary) – 3:51
+2005г. Bonnie - "I Will Not Be Broken" - "Deep Water" (John Capek, Marc Jordan) – 3:58
+Да се напише shell скрипт приемащ два параметъра, които са имена на файлове от вашата home директория. Скриптът сравнява, кой от двата файла има повече на брой редове, съдържащи неговото
+име (на файла). За файлът победител изпълнете следните действия:
+• извлечете съдържанието му, без годината на издаване на албума и без името на изпълнителя
+• сортирайте лексикографски извлеченото съдържание и го запишете във файл с име ’изпълнител.songs’
+Примерен изходен файл (с име Bonnie.songs):
+"Crooked Crown" (David Batteau, Maia Sharp) – 3:49
+"God Was in the Water" (Randall Bramblett, Davis Causey) – 5:17
+"I Will Not Be Broken" - "Deep Water" (John Capek, Marc Jordan) – 3:58
+"Love on One Condition" (Jon Cleary) – 3:43
+"So Close" (Tony Arata, George Marinelli, Pete Wasner) – 3:22
+"Trinkets" (Emory Joseph) – 5:02
+"Unnecessarily Mercenary" (Jon Cleary) – 3:51
+```shell
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+
+lines1=$(cat $1 | grep "$1" | wc -l)
+lines2=$(cat $2 | grep "$2" | wc -l)
+
+if [ $lines1 -gt $lines2 ]; then
+        cat $1 | cut -d'-' -f2-|sed 's/^ //'|sort >> "$1.songs"
+else
+        cat $2 | cut -d'-' -f2-|sed 's/^ //'|sort >> "$2.songs"
+fi
+```
 #### 2016-SE-06.
 Имате текстов файл със следното съдържание (всяка книга е на един ред):
 1979 г. - „Синият тайфун“ (сборник съветски научнофантастични разкази за морето)
@@ -276,51 +350,38 @@ destination.
  
   cat $1 | cut -d'-' -f2-|sed 's/^ //'|awk '{print NR". "$0}'|sed 's/„/@/'|    sed 's/“/@/' | sort -t'@' -k2|sed 's/@/„/1'|sed 's/@/“/1'
 ```
-
-#### 18.
-```shell
-#!/bin/bash
-
-if [ $# -ne 2 ]; then
-        echo "Invalid input"
-        exit 1
-fi
-regex="^[0-9]+$"
-if [[ ! $1=~$regex || ! $2=~$regex ]]; then
-        echo "Invalid input"
-        exit 1
-fi
-mkdir a b c
-for file in $(find . -type f); do
-        lines=$(cat $file | wc -l)
-        if [ $lines -lt $1 ];then
-                mv $file a
-        elif [[ $lines -gt $1 && $lines -lt $2 ]];then
-                mv $file b
-        else
-                mv $file c
-        fi
-done
-```
-#### 19.
-```shell
-#!/bin/bash
-
-if [ $# -ne 2 ]; then
-        echo "Invalid input"
-        exit 1
-fi
-
-lines1=$(cat $1 | grep "$1" | wc -l)
-lines2=$(cat $2 | grep "$2" | wc -l)
-
-if [ $lines1 -gt $lines2 ]; then
-        cat $1 | cut -d'-' -f2-|sed 's/^ //'|sort >> "$1.songs"
-else
-        cat $2 | cut -d'-' -f2-|sed 's/^ //'|sort >> "$2.songs"
-fi
-```
-#### 21. 
+#### 2017-IN-01.
+Напишете скрипт, който приема три задължителни позицонни аргумента:
+• име на фаил
+• низ1
+• низ2
+Файлът е текстови, и съдържа редове във формат:
+6ключ=стойност
+където стойност може да бъде:
+• празен низ, т.е. редът е ключ=
+• низ, състоящ се от един или повече термове, разделени с интервали, т.е., редът е ключ=t1 t2
+t3
+Някъде във файла:
+• се съдържа един ред с ключ първия подаден низ (низ1);
+• и може да се съдържа един ред с ключ втория подаден низ (низ2).
+Скриптът трябва да променя реда с ключ низ2 така, че обединението на термовете на редовете с
+ключове низ1 и низ2 да включва всеки терм еднократно.
+Примерен входен файл:
+$ cat z1.txt
+FOO=73
+BAR=42
+BAZ=
+ENABLED_OPTIONS=a b c d
+ENABLED_OPTIONS_EXTRA=c e f
+Примерно извикване:
+$ ./a.sh z1.txt ENABLED_OPTIONS ENABLED_OPTIONS_EXTRA
+Изходен файл:
+$ cat z1.txt
+FOO=73
+BAR=42
+BAZ=
+ENABLED_OPTIONS=a b c d
+ENABLED_OPTIONS_EXTRA=e f 
 ```shell
 #!/bin/bash
 
@@ -352,7 +413,9 @@ done
 toRep=$(cat $1 |egrep "^$3=.*")
 sed -i "s/$toRep/$3=$line/g" $1
 ```
-#### 23.
+#### 2017-IN-03.
+Напишете скрипт, който извежда името на потребителския акаунт, в чиято home
+директория има най-скоро променен обикновен файл и кой е този файл. Напишете скрипта с подходящите проверки, така че да бъде валиден инструмент.
 ```shell
 #!/bin/bash
 
@@ -364,7 +427,14 @@ fi
 cat /etc/passwd | cut -d':' -f6| grep "home"|xargs -I {} find {} -type f -printf "%AT %f %u\n" 2>/dev/null|sort -nr -k1|head -n1|cut -d' ' -f2,3
 
 ```
-#### 24.
+#### 2017-SE-01.
+Напишете скрипт, който получава задължителен първи позиционен параметър – директория и незадължителен втори – число. Скриптът трябва да проверява подадената директория
+и нейните под-директории и да извежда имената на:
+7а) при подаден на скрипта втори параметър – всички файлове с брой hardlink-ове поне равен на
+параметъра;
+б) при липса на втори параметър – всички symlink-ове с несъществуващ destination (счупени
+symlink-ове).
+Забележка:За удобство приемаме, че ако има подаден втори параметър, то той е число.
 ```shell
 #!/bin/bash
 
