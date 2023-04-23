@@ -658,3 +658,69 @@ do
         fi
 done
 ```
+#### 2018-SE-02.
+Напишете скрипт, който приема два позиционни аргумента – име на текстови файл
+и директория. Директорията не трябва да съдържа обекти, а текстовият файл (US-ASCII) е стенограма и всеки ред е в следния формат:
+ИМЕ ФАМИЛИЯ (уточнения): Реплика
+където:
+• ИМЕ ФАМИЛИЯ присъстват задължително;
+• ИМЕ и ФАМИЛИЯ се състоят само от малки/главни латински букви и тирета;
+• (уточнения) не е задължително да присъстват;
+• двоеточието ‘:’ присъства задължително;
+• Репликата не съдържа знаци за нов ред;
+• в стринга преди двоеточието ‘:’ задължително има поне един интервал между ИМЕ и ФАМИЛИЯ;
+• наличието на други интервали където и да е на реда е недефинирано.
+Примерен входен файл:
+John Lennon (The Beatles): Time you enjoy wasting, was not wasted.
+Roger Waters: I’m in competition with myself and I’m losing.
+John Lennon:Reality leaves a lot to the imagination.
+Leonard Cohen:There is a crack in everything, that’s how the light gets in.
+Скриптът трябва да:
+• създава текстови файл dict.txt в посочената директория, който на всеки ред да съдържа:
+ИМЕ ФАМИЛИЯ;НОМЕР
+където:
+– ИМЕ ФАМИЛИЯ е уникален участник в стенограмата (без да се отчитат уточненията);
+– НОМЕР е уникален номер на този участник, избран от вас.
+• създава файл НОМЕР.txt в посочената директория, който съдържа всички (и само) редовете
+на дадения участник.
+
+```shell
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+
+if [[ ! -f $1 ]]; then
+        echo "Invalid file name"
+        exit 1
+fi
+
+if [[ ! -d $2 ]]; then
+        echo "Invalid dir name"
+        exit 1
+fi
+
+if [ $(find $2 -mindepth 1 -maxdepth 1|wc -l) -ne 0 ]; then
+        echo "Directory not empty"
+        exit 1
+fi
+
+touch $2/dict.txt
+
+users=$(mktemp)
+
+cat $1 | cut -d':' -f1 |egrep ".*\(.*"|cut -d'(' -f1|sed 's/ $//' > $users
+cat $1 | cut -d':' -f1|egrep -v ".*\(.*" >> $users
+
+cat $users | sort -d | uniq | awk '{print $1" "$2";"NR}' > $2/dict.txt
+
+for number in $(cat $2/dict.txt | cut -d';' -f2); do
+        touch $2/$number.txt
+        us=$(cat $2/dict.txt | grep "$number"|cut -d';' -f1)
+        cat $1 | grep "$us" >> $2/$number.txt
+done
+
+rm $users
+```
