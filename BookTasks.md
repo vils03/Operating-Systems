@@ -812,3 +812,59 @@ cat $toCheck | sort -n -t' ' -k1 | cut -d' ' -f2-|sed 's/^ //'
 
 rm $allData
 ```
+#### 2022-CE-01
+Описание на формат на CSV (текстови) файл: <br />
+• CSV файлът представлява таблица, като всеки ред на таблицата е записан на отделен ред; <br />
+• на даден ред всяко поле (колона) е разделено от останалите със запетая; <br />
+• в полетата не може да присъства запетая, т.е. запетаята винаги е разделител между полета; <br />
+• броят на полетата на всеки ред е константа; <br />
+• първият ред във файла e header, който описва имената на колоните. <br />
+Разполагате с два CSV файла със следното примерно съдържание: <br />
+• base.csv: <br />
+unit name,unit symbol,measure <br />
+second,s,time <br />
+metre,m,length <br />
+kilogram,kg,mass <br />
+ampere,A,electric current   <br />
+kelvin,K,thermodynamic temperature  <br />
+mole,mol,amount of substance  <br />
+candela,cd,luminous intensity  <br />
+• prefix.csv:  <br />
+prefix name,prefix symbol,decimal  <br />
+tera,T,1000000000000  <br />
+giga,G,1000000000  <br />
+mega,M,1000000  <br />
+mili,m,0.001  <br />
+nano,n,0.000000001  <br />
+Където смисълът на колоните е:  <br />
+• за base.csv  <br />
+– unit name – име на мерна единица  <br />
+– unit symbol – съкратено означение на мерната единица <br />
+– measure – величина <br />
+• за prefix.csv <br />
+– prefix name – име на представка <br />
+– prefix symbol – означение на представка <br />
+– decimal – стойност <br />
+Забележка: Във файловете може да има и други редове, освен показаните в примера. Приемаме,
+че файловете спазват описания по-горе формат, т.е. не е необходимо да проверявате формата.
+Напишете shell скрипт, който приема три задължителни параметъра: число, prefix symbol и unit
+symbol. <br />
+Скриптът, ако може, трябва да извежда числото в основната мерна единица без представка, добавяйки в скоби величината и името на мерната единица. <br />
+Примерен вход и изход: <br />
+$ ./foo.sh 2.1 M s <br />
+202100000.0 s (time, second) <br />
+Забележка: За изчисления може да ползвате bc <br />
+```shell
+#!/bin/bash
+
+if [ $# -ne 3 ]; then
+        echo "Invalid input"
+        exit 1
+fi
+
+decimal=$(cat prefix.csv | grep "$2" | cut -d',' -f3)
+measure=$(cat base.csv | egrep ",$3," | cut -d',' -f3)
+unit=$(cat base.csv | egrep ",$3," | cut -d',' -f1)
+final=$(echo "${decimal}*${1}" | bc)
+echo "${final} ${3} (${measure}, ${unit})"
+```
