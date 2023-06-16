@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 
 ```
 3. Реализирайте команда wc, с един аргумент подаден като входен параметър.
-
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -83,6 +83,6 @@ int main(int argc, char** argv){
 
 }
 
-```c
+
 
 ```
