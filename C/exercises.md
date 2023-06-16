@@ -45,3 +45,44 @@ int main(int argc, char* argv[])
 }
 
 ```
+3. Реализирайте команда wc, с един аргумент подаден като входен параметър.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <err.h>
+#include <errno.h>
+#include <stdint.h>
+#include <unistd.h>
+int main(int argc, char** argv){
+
+        if(argc!=2)
+                errx(1,"ERROR: Invalid arguments count!");
+        int fd1;
+        char ch;
+        if((fd1 = open(argv[1], O_RDONLY)) == -1)
+                err(2, "ERROR: Could not open file %s for reading!", argv[1]);
+        int bytesCount;
+
+        int charCount= 0, linesCount=0, wordCount=0;
+            while((bytesCount = read(fd1, &ch, 1)) == 1){
+                 if(ch == '\n'){
+                        linesCount++;
+                        wordCount++;
+                }
+             if(ch == ' '){
+                        wordCount++;
+                 }
+                        charCount++;
+        }
+        if(bytesCount == -1)
+                err(3, "ERROR: Could not read from file %s!", argv[1]);
+        close(fd1);
+        dprintf(1, "File %s has: %d lines, %d chars, %d words \n", argv[1], linesCount, charCount, wordCount);
+        exit(0);
+
+}
+
+```c
+
+```
