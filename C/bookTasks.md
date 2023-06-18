@@ -128,6 +128,7 @@ f2.bin, като описва вътре само разликите между 
 Примерен patch.bin:<br />
 00000000: 0200 b159 3000 35af ...Y0.5.<br />
 
+
 ```c
 #include <fcntl.h>
 #include <stdlib.h>
@@ -206,4 +207,122 @@ int main(int argc, char** argv){
         exit(0);
 }
 
+```
+69. Напишете програма на C, която приема три параметъра – имена на двоични файлове.<br />
+Примерно извикване: <br />
+$ ./main patch.bin f1.bin f2.bin<br />
+Файловете patch.bin и f1.bin съществуват, и на тяхна база програмата трябва да създаде f2.bin.
+Файлът patch.bin се състои от две секции – 16 байтов хедър и данни. На базата на хедъра програмата трябва да може да интерпретира съдържанието на файла. Структурата на хедъра е:<br />
+• uint32_t, magic – магическа стойност 0xEFBEADDE, която дефинира, че файлът следва тази
+спецификация<br />
+• uint8_t, header version – версия на хедъра, с единствена допустима стойност за момента 0x01,
+която дефинира останалите байтове от хедъра както следва:<br />
+– uint8_t, data version – версия (описание) на използваните структури в секцията за данни
+на файла<br />
+– uint16_t, count – брой записи в секцията за данни<br />
+– uint32_t, reserved 1 – не се използва<br />
+– uint32_t, reserved 2 – не се използва<br />
+Възможни структури в секцията за данни на файла спрямо data version:<br />
+• при версия 0x00<br />
+– uint16_t, offset<br />
+– uint8_t, original byte<br />
+– uint8_t, new byte<br />
+• при версия 0x01<br />
+– uint32_t, offset<br />
+– uint16_t, original word<br />
+– uint16_t, new word<br />
+• забележка: и при двете описани версии offset е отместване в брой елементи спрямо началото
+на файла<br />
+Двоичните файлове f1.bin и f2.bin се третират като състоящи се от елементи спрямо data version
+в patch.bin.<br />
+Програмата да създава файла f2.bin като копие на файла f1.bin, но с отразени промени на базата
+на файла patch.bin, при следния алгоритъм:<br />
+• за всяка наредена тройка от секцията за данни на patch.bin, ако на съответният offset в
+оригиналния файл f1.bin е записан елементът original byte/word, в изходният файл се записва new byte/word. Ако не е записан такъв елемент или той не съществува, програмата да
+прекратява изпълнението си по подходящ начин;<br />
+• всички останали елементи се копират директно.<br />
+Наредените тройки в секцията за данни на файла patch.bin да се обработват последователно.
+Обърнете внимание на обработката за грешки и съобщенията към потребителя – искаме програмата
+да бъде удобен и валиден инструмент.
+
+```c
+//only for data version 0x00
+#include <stdint.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <err.h>
+#include <stdlib.h>
+
+struct header{
+        uint32_t magic;
+        uint8_t headerVersion;
+        uint8_t dataVersion;
+        uint16_t count;
+        uint32_t _;
+        uint32_t __;
+}__attribute((packed));
+
+struct data1{
+        uint16_t offset;
+        uint8_t oldByte;
+        uint8_t newByte;
+};
+
+int main(int argc, char** argv){
+        if(argc!=4){
+                errx(1, "ERROR: Invalid argument count!");
+        }
+        int fd1, fd2, fd3;
+        if((fd1=open(argv[1], O_RDONLY)) == -1){
+                err(2, "ERROR: Could not open file %s for reading!", argv[1]);
+        }
+        if((fd2=open(argv[2], O_RDONLY)) == -1){
+                err(2, "ERROR: Could not open file %s for reading!", argv[2]);
+        }
+
+        if((fd3=open(argv[3], O_RDWR|O_TRUNC|O_CREAT, 0766)) == -1){
+                err(3, "ERROR: Could not open file %s for writing!", argv[3]);
+        }
+        struct header h;
+        if(read(fd1, &h, sizeof(h)) == -1){
+                err(4, "ERROR: Could not read from file %s!", argv[1]);
+        }
+        if(h.magic != 0xEFBEADDE || h.headerVersion != 0x01){
+                errx(5, "ERROR: Invalid magic number or header version!");
+        }
+        uint16_t dataCount = h.count;
+        if(h.dataVersion == 0x00){
+                struct data1 d;
+                for(uint16_t i = 0;i<dataCount;++i){
+                        if(read(fd1, &d, sizeof(d)) != sizeof(d)){
+                                err(4, "ERROR: Could not read from file %s", argv[1]);
+                        }
+                        uint8_t fd2Byte;
+                        for(uint16_t j =0;j<d.offset;++j){
+                                if(read(fd2, &fd2Byte, 1) != 1){
+                                        err(4, "ERROR: Could not read from file %s!", argv[2]);
+                                }
+                                if(write(fd3, &fd2Byte, 1) != 1){
+                                        errx(7, "ERROR: Could not write to file %s!", argv[3]);
+                                }
+                        }
+                        lseek(fd2, d.offset, SEEK_SET);
+                        if(read(fd2, &fd2Byte, 1) != 1){
+                                err(4, "ERROR: Could not read from file %s" , argv[2]);
+                        }
+                        if(fd2Byte != d.oldByte){
+                                errx(6, "ERROR: Different bytes!");
+                        }
+                        else{
+                                if(write(fd3, &d.newByte, 1) != 1){
+                                        err(7, "ERROR: Could not write to file %s!", argv[3]);
+                                }
+                        }
+                }
+        }
+        close(fd1);
+        close(fd2);
+        close(fd3);
+        exit(0);
+}
 ```
