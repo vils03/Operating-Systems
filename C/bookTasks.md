@@ -326,3 +326,143 @@ int main(int argc, char** argv){
         exit(0);
 }
 ```
+Зад. 78 2022-SE-01 Напишете програма на C, която приема два позиционни аргумента – имена на
+двоични файлове. Примерно извикване: ./main data.bin comparator.bin<br />
+Файлът data.bin се състои от две секции – 8 байтов хедър и данни. Структурата на хедъра е:<br />
+• uint32_t, magic – магическа стойност 0x21796F4A, която дефинира, че файлът следва тази
+спецификация;<br />
+• uint32_t, count – описва броя на елементите в секцията с данни.<br />
+Секцията за данни се състои от елементи – uint64_t числа.<br />
+Файлът comparator.bin се състои от две секции – 16 байтов хедър и данни. Структурата на хедъра
+е:<br />
+• uint32_t, magic1 – магическа стойност 0xAFBC7A37;<br />
+• uint16_t, magic2 – магическа стойност 0x1C27;<br />
+• комбинацията от горните две magic числа дефинира, че файлът следва тази спецификация;<br />
+• uint16_t, reserved – не се използва;<br />
+• uint64_t, count – описва броя на елементите в секциата с данни.<br />
+Секцията за данни се състои от елементи – наредени 6-торки:<br />
+• uint16_t, type – възможни стойности: 0 или 1;<br />
+• 3 бр. uint16_t, reserved – възможни стойности за всяко: 0;<br />
+• uint32_t, offset1;<br />
+• uint32_t, offset2.<br />
+Двете числа offset дефинират отместване (спрямо N0) в брой елементи за data.bin; type дефинира
+операция за сравнение:<br />
+• 0: “по-малко”;<br />
+• 1: “по-голямо”.<br />
+Елементите в comparator.bin дефинират правила от вида:<br />
+• “елементът на offset1” трябва да е “по-малък” от “елементът на offset2”;<br />
+• “елементът на offset1” трябва да е “по-голям” от “елементът на offset2”.<br />
+Програмата трябва да интепретира по ред дефинираните правила в comparator.bin и ако правилото
+не е изпълнено, да разменя in-place елементите на съответните отмествания. Елементи, които са
+равни, няма нужда да се разменят.
+
+```c
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <err.h>
+#include <stdlib.h>
+
+struct headerData{
+        uint32_t magic;
+        uint32_t count;
+};
+
+struct headerComparator{
+        uint32_t magic1;
+        uint32_t magic2;
+        uint16_t _;
+        uint64_t count;
+}__attribute((packed));
+
+struct dataComparator{
+        uint16_t type;
+        uint16_t reserved[3];
+        uint32_t offset1;
+        uint32_t offset2;
+}__attribute((packed));
+
+void swapNumbers(int,uint32_t,uint32_t, uint64_t,uint64_t);
+void swapNumbers(int fd1, uint32_t offset1, uint32_t offset2, uint64_t number1, uint64_t number2){
+        //proverki za lseek
+        lseek(fd1, 16 + offset1*8, SEEK_SET);
+        if(write(fd1, &number2, sizeof(number2)) != sizeof(number2)){
+                err(8, "ERROR: Could not write to file!");
+        }
+        lseek(fd1, 16+offset2*8, SEEK_SET);
+        if(write(fd1, &number1, sizeof(number1)) != sizeof(number1)){
+                err(8, "ERROR: Could not write to file!");
+        }
+}
+
+int main(int argc, char** argv){
+        if(argc!=3){
+                errx(1, "Invalid argument count!");
+        }
+        int fd1, fd2;
+        if((fd1=open(argv[1], O_RDWR)) == -1){
+                err(2, "ERROR: Could not open file %s for writing and reading!", argv[1]);
+        }
+        if((fd2=open(argv[2], O_RDONLY)) == -1){
+                err(3, "ERROR: Could not open file %s for reading!", argv[2]);
+        }
+        struct headerData hd;
+        if(read(fd1, &hd, sizeof(hd)) != sizeof(hd)){
+                err(4, "ERROR: Could not read from file %s!", argv[1]);
+        }
+        if(hd.magic != 0x21796F4A ){
+                errx(5, "ERROR: Invalid data header magic number!");
+        }
+        uint32_t dataCount = hd.count;
+
+
+        struct headerComparator hc;
+        if(read(fd2, &hc, sizeof(hc)) != sizeof(hc)){
+                err(4, "ERROR: Could not read from file %s!", argv[2]);
+        }
+        if(hc.magic1 != 0xAFBC7A37 || hc.magic2 != 0x1C27){
+                errx(5, "ERROR: Invalid comparator header magic number!");
+        }
+        uint32_t compDataCount = hc.count;
+
+        for(uint32_t i =0;i<compDataCount;++i){
+                struct dataComparator dc;
+                if(read(fd2, &dc, sizeof(dc)) != sizeof(dc)){
+                        err(4, "ERROR: Could not read from file %s!", argv[2]);
+                }
+                        for(int  j=0;j<3;++j){
+                                if(dc.reserved[j] != 0){
+                                        errx(6, "ERROR: Invalid reserved number!");
+                                }
+                        }
+                        if(dc.offset1 > dataCount || dc.offset2>dataCount){
+                                errx(7, "ERROR: Invalid offset number!");
+                        }
+                        lseek(fd1, 8*dc.offset1 + 16, SEEK_SET);
+                        uint64_t number1;
+                        if(read(fd1, &number1, sizeof(number1)) != sizeof(number1)){
+                                err(4, "ERROR: Could not read from file %s!", argv[1]);
+                        }
+                        lseek(fd1, 8*dc.offset2 + 16,SEEK_SET);
+                        uint64_t number2;
+                        if(read(fd1, &number2, sizeof(number2)) != sizeof(number2)){
+                                err(4, "ERROR: Could not read from file %s!", argv[1]);
+                        }
+                        if(dc.type == 0){
+                                if(number1 > number2){
+                                        swapNumbers(fd1, dc.offset1,dc.offset2, number1, number2);
+                                }
+                        }
+                        else if(dc.type == 1){
+                                if(number1<number2){
+                                        swapNumbers(fd1, dc.offset1, dc.offset2, number1, number2);
+                                }
+                        }
+        }
+        close(fd1);
+        close(fd2);
+        exit(0);
+}
+
+```
