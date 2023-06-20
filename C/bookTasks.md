@@ -374,14 +374,14 @@ struct headerComparator{
         uint32_t magic2;
         uint16_t _;
         uint64_t count;
-}__attribute((packed));
+}__attribute__((packed));
 
 struct dataComparator{
         uint16_t type;
         uint16_t reserved[3];
         uint32_t offset1;
         uint32_t offset2;
-}__attribute((packed));
+}__attribute__((packed));
 
 void swapNumbers(int,uint32_t,uint32_t, uint64_t,uint64_t);
 void swapNumbers(int fd1, uint32_t offset1, uint32_t offset2, uint64_t number1, uint64_t number2){
