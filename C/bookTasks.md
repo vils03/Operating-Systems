@@ -507,3 +507,75 @@ int main(int argc, char** argv){
 }
 
 ```
+Зад. 82 2017-IN-01 Напишете програма на C, която използвайки външни shell команди през pipe() да
+извежда статистика за броя на използване на различните shell-ове от потребителите, дефинирани
+в системата. Изходът да бъде сортиран във възходящ ред според брой използвания на shell-овете.
+
+```c
+#include <stdint.h>
+#include <unistd.h>
+#include <err.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+
+int main(void){
+        int p[3][2];
+        //cut
+        if(pipe(p[0]) == -1)
+                err(1, "ERROR: Could not pipe 1!");
+        pid_t child1 = fork();
+        if(child1 == -1)
+                err(2, "ERROR: Could not fork!");
+        if(child1 == 0){
+                close(p[0][0]);
+                if(dup2(p[0][1], 1) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(execlp("cut", "cut", "-d:", "-f7", "/etc/passwd", NULL) == -1)
+                        err(3, "ERROR: Could dnot exec cut!");
+        }
+        close(p[0][1]);
+        wait(NULL);
+        //sort
+        if(pipe(p[1]) == -1)
+                err(1, "ERROR: Could not pipe 2!");
+        pid_t child2 = fork();
+        if(child2 == -1)
+                err(2, "ERROR: Culd not fork!");
+        if(child2 == 0){
+                close(p[1][0]);
+                if(dup2(p[0][0], 0) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(dup2(p[1][1], 1) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(execlp("sort", "sort", NULL) == -1)
+                        err(3, "ERROR: could not exec sort!");
+        }
+        close(p[1][1]);
+        wait(NULL);
+        //uniq
+        if(pipe(p[2]) == -1)
+                err(1, "ERROR: Could not pipe!");
+        pid_t child3 = fork();
+        if(child3 == -1)
+                err(2, "ERROR: Could not fork!");
+        if(child3 == 0){
+                close(p[2][0]);
+                if(dup2(p[1][0], 0) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(dup2(p[2][1],1) == -1)
+                        err(4, "ERROR: Culd not dup!");
+                if(execlp("uniq", "uniq", "-c", NULL) == -1)
+                        err(3, "ERROR: Could not exec uniq!");
+        }
+        close(p[2][1]);
+        wait(NULL);
+        //sort -n
+        if(dup2(p[2][0], 0) == -1)
+                err(4, "ERROR: Could not dup!");
+        if(execlp("sort", "sort", "-n", NULL) == -1)
+                err(3, "ERROR: Could not exec sort -n!");
+        exit(0);
+
+
+}
+```
