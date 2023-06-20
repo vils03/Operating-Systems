@@ -490,16 +490,20 @@ int main(int argc, char** argv){
                 err(3, "ERROR: Could not fork!");
         if(child == 0){
                 close(pf[0]);
-                dup2(pf[1], 1);
+                if(dup2(pf[1], 1)==-1)
+                        err(5, "ERROR: Could not dup!");
                 if(execlp("cat", "cat",argv[1], NULL) ==-1)
                         err(4, "ERROR: Could not exec cat!");
         }
         close(pf[1]);
-        dup2(pf[0], 0);
+        int status;
+        if(wait(&status) == -1)
+                err(6, "ERROR: Could not wait!");
+        if(dup2(pf[0], 0)==-1)
+                err(5, "ERROR: Could not dup!");
         if(execlp("sort", "sort", NULL) == -1)
                 err(4, "ERROR: Could not exec sort");
         close(pf[0]);
-        wait(NULL);
-        exit(0);
 }
+
 ```
