@@ -386,11 +386,11 @@ struct dataComparator{
 void swapNumbers(int,uint32_t,uint32_t, uint64_t,uint64_t);
 void swapNumbers(int fd1, uint32_t offset1, uint32_t offset2, uint64_t number1, uint64_t number2){
         //proverki za lseek
-        lseek(fd1, 16 + offset1*8, SEEK_SET);
+        lseek(fd1, 8 + offset1*8, SEEK_SET);
         if(write(fd1, &number2, sizeof(number2)) != sizeof(number2)){
                 err(8, "ERROR: Could not write to file!");
         }
-        lseek(fd1, 16+offset2*8, SEEK_SET);
+        lseek(fd1, 8+offset2*8, SEEK_SET);
         if(write(fd1, &number1, sizeof(number1)) != sizeof(number1)){
                 err(8, "ERROR: Could not write to file!");
         }
@@ -439,12 +439,12 @@ int main(int argc, char** argv){
                         if(dc.offset1 > dataCount || dc.offset2>dataCount){
                                 errx(7, "ERROR: Invalid offset number!");
                         }
-                        lseek(fd1, 8*dc.offset1 + 16, SEEK_SET);
+                        lseek(fd1, 8*dc.offset1 + 8, SEEK_SET);
                         uint64_t number1;
                         if(read(fd1, &number1, sizeof(number1)) != sizeof(number1)){
                                 err(4, "ERROR: Could not read from file %s!", argv[1]);
                         }
-                        lseek(fd1, 8*dc.offset2 + 16,SEEK_SET);
+                        lseek(fd1, 8*dc.offset2 + 8,SEEK_SET);
                         uint64_t number2;
                         if(read(fd1, &number2, sizeof(number2)) != sizeof(number2)){
                                 err(4, "ERROR: Could not read from file %s!", argv[1]);
