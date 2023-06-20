@@ -466,3 +466,40 @@ int main(int argc, char** argv){
 }
 
 ```
+Зад. 80 2016-SE-01 Напишете програма на C, която по подадено име на (текстови) файл като параметър,
+извежда съдържанието на файла сортирано, чрез употреба на външните програми cat и sort през
+pipe().
+
+```c
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <err.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+
+int main(int argc, char** argv){
+        if(argc!=2)
+                errx(1,"ERROR: Invalid argument count!");
+        int pf[2];
+        if(pipe(pf) == -1)
+                err(2, "ERROR: Could not pipe!");
+        pid_t child = fork();
+        if(child == -1)
+                err(3, "ERROR: Could not fork!");
+        if(child == 0){
+                close(pf[0]);
+                dup2(pf[1], 1);
+                if(execlp("cat", "cat",argv[1], NULL) ==-1)
+                        err(4, "ERROR: Could not exec cat!");
+        }
+        close(pf[1]);
+        dup2(pf[0], 0);
+        if(execlp("sort", "sort", NULL) == -1)
+                err(4, "ERROR: Could not exec sort");
+        close(pf[0]);
+        wait(NULL);
+        exit(0);
+}
+```
