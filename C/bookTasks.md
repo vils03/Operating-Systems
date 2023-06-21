@@ -727,3 +727,87 @@ int main(int argc, char** argv){
 
 }
 ```
+
+Зад. 86 2020-SE-01 Напишете две програми на C (foo и bar), които си комуникират през наименована
+тръба. Програмата foo приема параметър - име на файл, програмата bar приема параметър -
+команда като абсолютен път до изпълним файл.
+Примерни извиквания и ред на изпълнение (в отделни терминали):<br />
+./foo a.txt<br />
+./bar /usr/bin/sort<br />
+Програмата foo трябва да изпълнява външна команда cat с аргумент името на подадения файл,
+така че съдържанието му да се прехвърли през тръбата към програмата bar, която от своя страна
+трябва да изпълни подадената и като аргумент команда (без параметри; /usr/bin/sort в примера),
+която да обработи получените през тръбата данни, четейки от стандартен вход. Еквивалент на
+горния пример би било следното изпълнение:<br />
+cat a.txt | /usr/bin/sort
+
+```c
+//foo.c
+#include <unistd.h>
+#include <stdint.h>
+#include <err.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+
+int main(int argc, char** argv){
+        if(argc!=2){
+                errx(1, "ERROR: Invalid argument count!");
+        }
+        const char* fifo = "./temp";
+        if(mkfifo(fifo, 0666) == -1)
+                err(2, "ERROR: Could not create named pipe!");
+        pid_t child = fork();
+        if(child == -1)
+                err(3, "ERROR: Could not fork!");
+        if(child ==0){
+                int fd;
+                if((fd =open(fifo, O_WRONLY)) == -1)
+                        err(4, "ERROR: Could not open fifo!");
+                if(dup2(fd, 1) == -1)
+                        err(5, "ERROR: Could not dup!");
+                if(execlp("cat", "cat",argv[1], NULL) == -1)
+                        err(6, "ERROR: Could not exec cat!");
+        }
+        wait(NULL);
+        exit(0);
+}
+
+
+//bar.c
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <err.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+int main(int argc, char** argv){
+        if(argc!=2)
+                errx(1, "ERROR: Invalid argument count!");
+        const char* fifo = "./temp";
+        pid_t child = fork();
+        if(child == -1)
+                err(2, "ERROR: Could not fork!");
+        if(child == 0){
+                int fd;
+                if((fd =open(fifo, O_RDONLY)) == -1)
+                        err(3, "ERROR: Could not open fifo!");
+                if(dup2(fd, 0) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(execl(argv[1], argv[1], NULL) == -1)
+                        err(5,"ERROR: Could not exec %s", argv[1]);
+        }
+        wait(NULL);
+        if(unlink(fifo) == -1)
+                err(6, "ERROR: Could not unlink!");
+        exit(0);
+}
+
+```
