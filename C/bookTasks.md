@@ -579,3 +579,75 @@ int main(void){
 
 }
 ```
+Зад. 83 2017-IN-02 Напишете програма на C, която приема незадължителен параметър – име на команда. Ако не е зададена команда като параметър, да се ползва командата echo. Максималната
+допустима дължина на командата е 4 знака.
+Програмата чете низове (с максимална дължина 4 знака) от стандартния си вход, разделени с
+интервали (0x20) или знак за нов ред (0x0A). Ако някой низ е с дължина по-голяма от 4 знака, то
+програмата да терминира със съобщение за грешка.
+Подадените на стандартния вход низове програмата трябва да третира като множество от параметри за дефинираната команда. Програмата ви трябва да изпълни командата колкото пъти е
+необходимо с максимум два низа като параметри, като изчаква изпълнението да приключи, преди
+да започне ново изпълнение.<br />
+Примерни вход, извиквания и изходи:<br />
+$ cat f1<br />
+a1<br />
+$ cat f2<br />
+a2<br />
+$ cat f3<br />
+a3<br />
+$ echo -e "f1\nf2 f3" | ./main cat<br />
+a1<br />
+a2<br />
+a3<br />
+$ echo -e "f1\nf2 f3" | ./main<br />
+f1 f2<br />
+f3<br />
+
+```c
+
+#include <stdint.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <err.h>
+#include <string.h>
+
+const int MAX_SIZE = 1024;
+
+int main(int argc, char** argv){
+        if(argc>2)
+                errx(1, "ERROR: Invalid argument count!");
+        char command[MAX_SIZE];
+        if(argc==1)
+                strcpy(command, "echo");
+        else if(argc==2){
+                if(strlen(argv[1]) >4)
+                        errx(2, "ERROR: Command length must be less than four!");
+                else
+                        strcpy(command, argv[1]);
+        }
+        char buff;
+        char par[MAX_SIZE];
+        int index =0;
+        while(read(0, &buff, sizeof(buff)) > 0){
+                if(buff == ' ' || buff == '\n'){
+                        par[index] = '\0';
+                        index = 0;
+                        if(strlen(par) > 4)
+                                errx(2,"ERROR: Parameter length must be less than four!");
+                        pid_t child = fork();
+                        if(child == -1)
+                                err(3, "ERROR: Could not fork!");
+                        if(child == 0)
+                        {
+                                if(execlp(command, command, par, NULL) == -1)
+                                        err(4, "ERROR: Could not exec!");
+                        }
+                        wait(NULL);
+                }
+                else{
+                        par[index++] = buff;
+                }
+        }
+        exit(0);
+}
+```
