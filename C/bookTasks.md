@@ -811,3 +811,79 @@ int main(int argc, char** argv){
 }
 
 ```
+
+Зад. 88 2020-SE-03 Напишете програма на C, която приема един задължителен позиционен параметър
+- име на файл. Файлът се състои от не повече от 8 наредени тройки елементи:<br />
+• име на файл – точно 8 байта, последният от които задължително е 0x00. Ако името е по-късо
+от 7 знака, излишните байтове са 0x00;<br />
+• offset – uint32_t, който дава пореден номер на елемент (спрямо N0) във файла;<br />
+• length – uint32_t, който дава брой елементи.<br />
+За всяка наредена тройка програмата трябва да пусне child процес, който да XOR-не (обработи с
+изключващо-или) елементите (uint16_t) от съответния файл един със друг, и да върне резултата
+на parent процеса, който от своя страна трябва да XOR-не всички получените резултати и да изведе
+полученото число в следния формат:<br />
+result: 573B<br />
+Забележка: С пълен брой точки се оценяват решения, в които child процесите работят паралелно
+```c
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <err.h>
+#include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct triple{
+        char name[8];
+        uint32_t offset;
+        uint32_t length;
+}__attribute__((packed));
+
+int main(int argc, char** argv){
+        if(argc!=2){
+                errx(1, "ERROR: Invalid argument count!");
+        }
+        int fd;
+        if((fd=open(argv[1], O_RDONLY)) == -1)
+                err(2, "ERROR: Could not open file %s!", argv[1]);
+        int bytes_count;
+        struct triple tr;
+        int p[2];
+        if(pipe(p) == -1)
+                err(3, "ERROR: Could not pipe!");
+        while((bytes_count = read(fd, &tr, sizeof(tr))) >0){
+                pid_t child = fork();
+                if(child == -1)
+                        err(4, "ERROR: Could not fork!");
+                if(child == 0){
+                        close(p[0]);
+                        int f;
+                        if((f=open(tr.name, O_RDONLY)) == -1)
+                                err(2, "ERROR: Could not open file %s", tr.name);
+                        if(dup2(p[1],1) == -1)
+                                err(5, "ERROR: Could not dup!");
+                        if(lseek(f, tr.offset*2, SEEK_SET) == -1)
+                                err(6, "ERROR: Could not lseek!");
+                        uint16_t number=0;
+                        for(uint32_t i=0;i < tr.length;++i)
+                        {
+                                uint16_t n;
+                                if(read(f, &n, sizeof(n)) == -1)
+                                        err(7, "ERROR: COuld  not read from fiel!");
+                                number^=n;
+                        }
+                        if(write(p[1], &number, sizeof(number)) != sizeof(number))
+                                err(8, "ERROR: Could not write to file!");
+                }
+                exit(0);
+        }
+        uint16_t n=0;
+        uint16_t num;
+        close(p[1]);
+        while(read(p[0], &num, sizeof(num)) > 0){
+                n^=num;
+        }
+        if(dprintf(1, "result: %d", num)==-1)
+                err(9, "ERROR: Could not print!");
+}
+```
