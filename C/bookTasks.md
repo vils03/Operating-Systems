@@ -651,3 +651,79 @@ int main(int argc, char** argv){
         exit(0);
 }
 ```
+
+
+Зад. 84 2018-SE-01 Напишете програма на C, която приема параметър – име на директория. Програмата
+трябва да извежда името на най-скоро променения (по съдържание) файл в тази директория и
+нейните под-директории, чрез употреба на външни шел команди през pipe().
+```c
+
+#include <unistd.h>
+#include <stdint.h>
+#include <sys/wait.h>
+#include <err.h>
+#include <stdlib.h>
+
+int main(int argc, char** argv){
+        if(argc!=2)
+                errx(1, "ERROR: Invalid argument count!");
+        int p[3][2];
+        //find
+        if(pipe(p[0]) == -1)
+                err(2, "ERROR: Could not pipe!");
+        pid_t child1 = fork();
+        if(child1 == -1)
+                err(3, "ERROR: Could not fork!");
+        if(child1 == 0){
+                close(p[0][0]);
+                if(dup2(p[0][1],1) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(execlp("find", "find",argv[1], "-type", "f", "-printf" ,"%AT %f\n", NULL) == -1)
+                        err(5, "ERROR: Could not exec find!");
+
+
+        }
+        close(p[0][1]);
+
+        //sort
+        if(pipe(p[1]) == -1)
+                err(2, "ERROR: Could not pipe!");
+        pid_t child2 = fork();
+        if(child2 == -1)
+                err(3, "ERROR: Could not fork!");
+        if(child2 == 0){
+                close(p[1][0]);
+                if(dup2(p[0][0],0) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(dup2(p[1][1], 1) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(execlp("sort", "sort", "-n", "-k1", "-r", NULL) == -1)
+                        err(5, "ERROR: Could not exec sort!");
+        }
+        close(p[1][1]);
+
+        //cut
+        if(pipe(p[2]) == -1)
+                err(2, "ERROR: Could not pipe!");
+        pid_t child3 = fork();
+        if(child3 == -1)
+                err(3, "ERROR: Could not fork!");
+        if(child3 == 0){
+                close(p[2][0]);
+                if(dup2(p[1][0],0) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(dup2(p[2][1], 1) == -1)
+                        err(4, "ERROR: Could not dup!");
+                if(execlp("cut", "cut", "-d", " ", "-f2", NULL) == -1)
+                        err(5, "ERROR: Could not exec cut!");
+        }
+        wait(NULL);
+        if(dup2(p[2][0], 0) == -1)
+                err(4, "ERROR: Could not dup!");
+        if(execlp("head", "head", "-n1", NULL) == -1)
+                err(5, "ERROR: Could not exec head!");
+        exit(0);
+
+
+}
+```
