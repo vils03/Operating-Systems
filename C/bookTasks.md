@@ -208,6 +208,56 @@ int main(int argc, char** argv){
 }
 
 ```
+65 2017-SE-04 Напишете програма на C, която да работи подобно на командата cat, реализирайки
+само следната функционалност:<br />
+• програмата извежда на STDOUT<br />
+• ако няма подадени параметри, програмата чете от STDIN<br />
+• ако има подадени параметри – файлове, програмата последователно ги извежда<br />
+• ако някой от параметрите започва с тире (-), програмата да го третира като специално име
+за STDIN<br />
+Примерно извикване:<br />
+$ ./main f - g<br />
+– извежда съдържанието на файла f, после STDIN, след това съдържанието на файла g<br />
+
+```c
+#include <stdint.h>
+#include <unistd.h>
+#include <err.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+
+void writeToStdout(int);
+void writeToStdout(int fd){
+        int bytes_count;
+        char byte;
+        while((bytes_count = read(fd, &byte, sizeof(byte))) > 0){
+                if(write(1, &byte, sizeof(byte)) != sizeof(byte))
+                        err(2, "ERROR: Could not write to stdout!");
+                }
+
+}
+
+int main(int argc, char** argv){
+        int fd;
+        if(argc==1)
+                writeToStdout(0);
+        for(int i = 1;i<argc;++i){
+                if(strcmp(argv[i], "-") ==0)
+                        fd = 0;
+                else{
+                        if((fd=open(argv[i], O_RDONLY)) == -1)
+                                err(1, "ERROR: Could not open file %s for reading!", argv[i]);
+                }
+                writeToStdout(fd);
+                close(fd);
+        }
+        exit(0);
+}
+
+```
+
 Зад. 71 2020-IN-01. Напишете програма на C, която приема три параметъра – имена на двоични файлове.<br />
 Примерно извикване: <br />
 $ ./main patch.bin f1.bin f2.bin<br />
